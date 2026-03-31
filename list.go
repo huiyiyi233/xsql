@@ -54,25 +54,42 @@ func (lq *ListQuery) Limit(page, limit int) *ListQuery {
 
 // Count 统计数据
 func (lq *ListQuery) Count(ctx context.Context, count *int64) error {
-	sqlStr := strings.Builder{}
-	sqlStr.Grow(23 + len(lq.table) + 9 + len(lq.query))
-	sqlStr.WriteString("SELECT COUNT(*) FROM " + lq.table)
+	var sqlStr strings.Builder
+	// 预估算："SELECT COUNT(*) FROM " + table + " WHERE " + query
+	sqlStr.Grow(20 + len(lq.table) + len(lq.query))
+	sqlStr.WriteString("SELECT COUNT(*) FROM ")
+	sqlStr.WriteString(lq.table)
 	if lq.query != "" {
-		sqlStr.WriteString(" WHERE " + lq.query)
+		sqlStr.WriteString(" WHERE ")
+		sqlStr.WriteString(lq.query)
 	}
 	return lq.GetContext(ctx, count, sqlStr.String(), lq.args...)
 }
 
 // List 查询数据
 func (lq *ListQuery) List(ctx context.Context, data any) error {
-	sqlStr := strings.Builder{}
-	sqlStr.Grow(9 + len(lq.fields) + 8 + len(lq.table) + 9 + len(lq.query) + 12 + len(lq.order) + 19)
-	sqlStr.WriteString("SELECT " + lq.fields + " FROM " + lq.table)
+	var sqlStr strings.Builder
+	// 预估算："SELECT " + fields + " FROM " + table + " WHERE " + query + " ORDER BY " + order + " LIMIT ? OFFSET ?"
+	whereLen := 0
 	if lq.query != "" {
-		sqlStr.WriteString(" WHERE " + lq.query)
+		whereLen = 8 + len(lq.query)
+	}
+	orderLen := 0
+	if lq.order != "" {
+		orderLen = 11 + len(lq.order)
+	}
+	sqlStr.Grow(9 + len(lq.fields) + 7 + len(lq.table) + whereLen + orderLen + 18)
+	sqlStr.WriteString("SELECT ")
+	sqlStr.WriteString(lq.fields)
+	sqlStr.WriteString(" FROM ")
+	sqlStr.WriteString(lq.table)
+	if lq.query != "" {
+		sqlStr.WriteString(" WHERE ")
+		sqlStr.WriteString(lq.query)
 	}
 	if lq.order != "" {
-		sqlStr.WriteString(" ORDER BY " + lq.order)
+		sqlStr.WriteString(" ORDER BY ")
+		sqlStr.WriteString(lq.order)
 	}
 	sqlStr.WriteString(" LIMIT ? OFFSET ?")
 	return lq.SelectContext(ctx, data, sqlStr.String(), append(lq.args, lq.limit, lq.offset)...)

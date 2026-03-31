@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 type (
@@ -77,6 +78,13 @@ func BuildUpdateClause(data map[string]any) (clause string, args []any) {
 }
 
 // AnyToString 将任意类型转换为字符串
+// 使用 sync.Pool 复用缓冲区，减少内存分配
+var stringBuilderPool = sync.Pool{
+	New: func() any {
+		return &strings.Builder{}
+	},
+}
+
 func AnyToString(d any) string {
 	switch v := d.(type) {
 	case string:
@@ -110,8 +118,12 @@ func AnyToString(d any) string {
 	case nil:
 		return "NULL"
 	default:
-		// 处理其他类型
-		return fmt.Sprintf("%v", v)
+		// 处理其他类型，使用 sync.Pool 复用 Builder
+		builder := stringBuilderPool.Get().(*strings.Builder)
+		defer stringBuilderPool.Put(builder)
+		builder.Reset()
+		fmt.Fprintf(builder, "%v", v)
+		return builder.String()
 	}
 }
 

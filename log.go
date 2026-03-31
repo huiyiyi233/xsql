@@ -16,13 +16,11 @@ func (t *Tx) logSQL(query string, args []any, start time.Time, err error) {
 }
 
 func logSQL(query string, args []any, start time.Time, err error, logLevel string) {
-
-	// 如果错误为 nil，则不输出日志
-	if logLevel == LogLevelErr && err == nil {
-		return
-	}
-	// 如果日志级别为关闭，则不输出日志
-	if logLevel != LogLevelDebug {
+	// 先判断日志级别，避免不必要的内存分配
+	shouldLog := logLevel == LogLevelDebug ||
+		(logLevel == LogLevelInfo && err != nil) ||
+		(logLevel == LogLevelErr && err != nil)
+	if !shouldLog {
 		return
 	}
 
