@@ -1,0 +1,47 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Go workspace file
+go.work
+go.work.sum
+
+# Dependency directories
+vendor/
+
+# IDE 配置和文件
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+*~
+
+# 临时文件
+*.tmp
+*.temp
+*.log
+
+# 环境变量文件
+.env
+.env.local
+
+# 编译输出
+bin/
+obj/
+build/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
