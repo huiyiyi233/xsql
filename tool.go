@@ -12,8 +12,9 @@ type (
 	}
 )
 
-// ReplacePlaceholders 替换占位符 $ 为实际参数值
+// ReplacePlaceholders 替换占位符
 func ReplacePlaceholders(format string, args ...string) string {
+
 	if len(args) == 0 {
 		return format
 	}
@@ -22,11 +23,23 @@ func ReplacePlaceholders(format string, args ...string) string {
 	var builder strings.Builder
 	builder.Grow(len(format) + len(args)*10) // 预分配内存
 
-	argIndex := 0
 	for i := 0; i < len(format); i++ {
-		if format[i] == '$' && argIndex < len(args) {
-			builder.WriteString(args[argIndex])
-			argIndex++
+		if format[i] == '$' && i+1 < len(format) {
+			// 检查下一个字符是否是数字
+			if format[i+1] >= '1' && format[i+1] <= '9' {
+				// 获取数字索引
+				idx := int(format[i+1] - '0') // 1-based
+				if idx <= len(args) {
+					builder.WriteString(args[idx-1])
+					i++ // 跳过数字字符
+				} else {
+					// 索引超出范围，保留原样
+					builder.WriteByte(format[i])
+				}
+			} else {
+				// 单个 $ 占位符，按顺序替换
+				builder.WriteString(args[0])
+			}
 		} else {
 			builder.WriteByte(format[i])
 		}
