@@ -19,7 +19,7 @@ func logSQL(query string, args []any, start time.Time, err error, logLevel strin
 	// 先判断日志级别，避免不必要的内存分配
 	shouldLog := logLevel == LogLevelDebug ||
 		(logLevel == LogLevelInfo && err != nil) ||
-		(logLevel == LogLevelErr && err != nil)
+		(logLevel == LogLevelErr)
 	if !shouldLog {
 		return
 	}
