@@ -66,7 +66,8 @@ func (db *DB) Transaction(f func(tx *Tx) error) error {
 	}
 	err = f(&Tx{Tx: tx, config: db.config})
 	if err != nil {
-		return tx.Rollback()
+		_ = tx.Rollback()
+		return err
 	}
 	return tx.Commit()
 }
