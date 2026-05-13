@@ -12,6 +12,8 @@ type (
 		fields string
 		query  string
 		args   []any
+		group  string
+		having string
 		order  string
 		limit  int
 		offset int
@@ -45,6 +47,18 @@ func (lq *ListQuery) Order(order string) *ListQuery {
 	return lq
 }
 
+// Group 分组
+func (lq *ListQuery) Group(group string) *ListQuery {
+	lq.group = group
+	return lq
+}
+
+// Having having条件
+func (lq *ListQuery) Having(having string) *ListQuery {
+	lq.having = having
+	return lq
+}
+
 // Limit 分页
 func (lq *ListQuery) Limit(page, limit int) *ListQuery {
 	lq.limit = limit
@@ -63,6 +77,7 @@ func (lq *ListQuery) Count(ctx context.Context, count *int64) error {
 		sqlStr.WriteString(" WHERE ")
 		sqlStr.WriteString(lq.query)
 	}
+
 	return lq.GetContext(ctx, count, sqlStr.String(), lq.args...)
 }
 
@@ -78,7 +93,15 @@ func (lq *ListQuery) List(ctx context.Context, data any) error {
 	if lq.order != "" {
 		orderLen = 11 + len(lq.order)
 	}
-	sqlStr.Grow(9 + len(lq.fields) + 7 + len(lq.table) + whereLen + orderLen + 18)
+	groupLen := 0
+	if lq.group != "" {
+		groupLen = 10 + len(lq.group)
+	}
+	havingLen := 0
+	if lq.having != "" {
+		havingLen = 8 + len(lq.having)
+	}
+	sqlStr.Grow(9 + len(lq.fields) + 7 + len(lq.table) + whereLen + orderLen + groupLen + havingLen + 18)
 	sqlStr.WriteString("SELECT ")
 	sqlStr.WriteString(lq.fields)
 	sqlStr.WriteString(" FROM ")
@@ -90,6 +113,12 @@ func (lq *ListQuery) List(ctx context.Context, data any) error {
 	if lq.order != "" {
 		sqlStr.WriteString(" ORDER BY ")
 		sqlStr.WriteString(lq.order)
+	}
+	if lq.group != "" {
+		sqlStr.WriteString(" GROUP BY " + lq.group)
+	}
+	if lq.having != "" {
+		sqlStr.WriteString(" HAVING " + lq.having)
 	}
 	sqlStr.WriteString(" LIMIT ? OFFSET ?")
 	return lq.SelectContext(ctx, data, sqlStr.String(), append(lq.args, lq.limit, lq.offset)...)
