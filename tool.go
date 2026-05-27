@@ -1,6 +1,7 @@
 package xsql
 
 import (
+	"database/sql"
 	"fmt"
 	"strconv"
 	"strings"
@@ -122,15 +123,30 @@ func AnyToString(d any) string {
 		builder := stringBuilderPool.Get().(*strings.Builder)
 		defer stringBuilderPool.Put(builder)
 		builder.Reset()
-		fmt.Fprintf(builder, "%v", v)
+		_, _ = fmt.Fprintf(builder, "%v", v)
 		return builder.String()
 	}
 }
 
 // LastInsertId 最后插入ID
-func LastInsertId[T Number](v int64, err error) (T, error) {
+func LastInsertId[T Number](result sql.Result, err error) (T, error) {
 	if err != nil {
 		return 0, err
 	}
-	return T(v), nil
+	id, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+	return T(id), nil
+}
+
+func RowsAffected[T Number](result sql.Result, err error) (T, error) {
+	if err != nil {
+		return 0, err
+	}
+	id, err := result.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	return T(id), nil
 }

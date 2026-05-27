@@ -15,10 +15,40 @@ func (db *DB) Exec(query string, args ...any) (sql.Result, error) {
 	return result, err
 }
 
+// ExecMust 执行 SQL 语句，必须成功（至少影响一行）
+func (db *DB) ExecMust(query string, args ...any) (sql.Result, error) {
+	start := time.Now()
+	result, err := db.DB.Exec(query, args...)
+	if err == nil {
+		var rows int64
+		rows, err = result.RowsAffected()
+		if err == nil && rows == 0 {
+			err = sql.ErrNoRows
+		}
+	}
+	db.logSQL(query, args, start, err)
+	return result, err
+}
+
 // ExecContext 执行 SQL 语句
 func (db *DB) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	start := time.Now()
 	result, err := db.DB.ExecContext(ctx, query, args...)
+	db.logSQL(query, args, start, err)
+	return result, err
+}
+
+// ExecMustContext 执行 SQL 语句，必须成功（至少影响一行）
+func (db *DB) ExecMustContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	start := time.Now()
+	result, err := db.DB.ExecContext(ctx, query, args...)
+	if err == nil {
+		var rows int64
+		rows, err = result.RowsAffected()
+		if err == nil && rows == 0 {
+			err = sql.ErrNoRows
+		}
+	}
 	db.logSQL(query, args, start, err)
 	return result, err
 }
@@ -29,10 +59,31 @@ func (db *DB) Update(ctx context.Context, data map[string]any, table, where stri
 	return db.ExecContext(ctx, sqlStr, argValue...)
 }
 
+// UpdateMust 必须更新数据
+func (db *DB) UpdateMust(ctx context.Context, data map[string]any, table, where string, args ...any) (sql.Result, error) {
+	sqlStr, argValue := update(data, table, where, args...)
+	return db.ExecMustContext(ctx, sqlStr, argValue...)
+}
+
 // Exec 执行 SQL 语句
 func (t *Tx) Exec(query string, args ...any) (sql.Result, error) {
 	start := time.Now()
 	result, err := t.Tx.Exec(query, args...)
+	t.logSQL(query, args, start, err)
+	return result, err
+}
+
+// ExecMust 执行 SQL 语句，必须成功（至少影响一行）
+func (t *Tx) ExecMust(query string, args ...any) (sql.Result, error) {
+	start := time.Now()
+	result, err := t.Tx.Exec(query, args...)
+	if err == nil {
+		var rows int64
+		rows, err = result.RowsAffected()
+		if err == nil && rows == 0 {
+			err = sql.ErrNoRows
+		}
+	}
 	t.logSQL(query, args, start, err)
 	return result, err
 }
@@ -45,10 +96,37 @@ func (t *Tx) ExecContext(ctx context.Context, query string, args ...any) (sql.Re
 	return result, err
 }
 
+// ExecMustContext 执行 SQL 语句，必须成功（至少影响一行）
+func (t *Tx) ExecMustContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	start := time.Now()
+	result, err := t.Tx.ExecContext(ctx, query, args...)
+	if err == nil {
+		var rows int64
+		rows, err = result.RowsAffected()
+		if err == nil && rows == 0 {
+			err = sql.ErrNoRows
+		}
+	}
+	t.logSQL(query, args, start, err)
+	return result, err
+}
+
 // Update 更新数据
 func (t *Tx) Update(ctx context.Context, data map[string]any, table, where string, args ...any) (sql.Result, error) {
 	sqlStr, argValue := update(data, table, where, args...)
 	return t.ExecContext(ctx, sqlStr, argValue...)
+}
+
+// UpdateMust 必须更新数据
+func (t *Tx) UpdateMust(ctx context.Context, data map[string]any, table, where string, args ...any) (uint32, error) {
+	rows, err := RowsAffected[uint32](t.Update(ctx, data, table, where, args...))
+	if err != nil {
+		return 0, err
+	}
+	if rows == 0 {
+		return 0, sql.ErrNoRows
+	}
+	return rows, nil
 }
 
 // update 更新数据
