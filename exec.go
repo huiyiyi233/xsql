@@ -55,13 +55,13 @@ func (db *DB) ExecMustContext(ctx context.Context, query string, args ...any) (s
 
 // Update 更新数据
 func (db *DB) Update(ctx context.Context, data map[string]any, table, where string, args ...any) (sql.Result, error) {
-	sqlStr, argValue := update(data, table, where, args...)
+	sqlStr, argValue := BuildUpdate(data, table, where, args...)
 	return db.ExecContext(ctx, sqlStr, argValue...)
 }
 
 // UpdateMust 必须更新数据
 func (db *DB) UpdateMust(ctx context.Context, data map[string]any, table, where string, args ...any) (sql.Result, error) {
-	sqlStr, argValue := update(data, table, where, args...)
+	sqlStr, argValue := BuildUpdate(data, table, where, args...)
 	return db.ExecMustContext(ctx, sqlStr, argValue...)
 }
 
@@ -113,7 +113,7 @@ func (t *Tx) ExecMustContext(ctx context.Context, query string, args ...any) (sq
 
 // Update 更新数据
 func (t *Tx) Update(ctx context.Context, data map[string]any, table, where string, args ...any) (sql.Result, error) {
-	sqlStr, argValue := update(data, table, where, args...)
+	sqlStr, argValue := BuildUpdate(data, table, where, args...)
 	return t.ExecContext(ctx, sqlStr, argValue...)
 }
 
@@ -129,8 +129,8 @@ func (t *Tx) UpdateMust(ctx context.Context, data map[string]any, table, where s
 	return rows, nil
 }
 
-// update 更新数据
-func update(data map[string]any, table string, where string, args ...any) (string, []any) {
+// BuildUpdate 构建 UPDATE SQL
+func BuildUpdate(data map[string]any, table string, where string, args ...any) (string, []any) {
 
 	// 预分配内存，提高性能
 	queryBuilder := strings.Builder{}
