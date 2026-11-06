@@ -150,3 +150,33 @@ func RowsAffected[T Number](result sql.Result, err error) (T, error) {
 	}
 	return T(id), nil
 }
+
+// ReplaceNewlines 把换行符（\r\n / \n / \r）替换为一个空格。
+// 不含换行符时直接返回原串（0 allocs），否则 2 次分配。
+func ReplaceNewlines(s string) string {
+	if strings.IndexAny(s, "\r\n") < 0 {
+		return s // 快路径
+	}
+	return string(replace([]byte(s)))
+}
+
+// replace 是原来的核心逻辑，返回有效前缀。
+func replace(buf []byte) []byte {
+	w := 0
+	for i := 0; i < len(buf); i++ {
+		c := buf[i]
+		if c == '\n' || c == '\r' {
+			if c == '\r' && i+1 < len(buf) && buf[i+1] == '\n' {
+				i++
+			}
+			buf[w] = ' '
+			w++
+			continue
+		}
+		if w != i {
+			buf[w] = c
+		}
+		w++
+	}
+	return buf[:w]
+}

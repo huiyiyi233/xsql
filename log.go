@@ -24,6 +24,8 @@ func logSQL(query string, args []any, start time.Time, err error, logLevel strin
 		return
 	}
 
+	query = ReplaceNewlines(query)
+
 	var s strings.Builder
 	// 预估算容量：基础长度 + 查询长度 + 参数估计长度
 	s.Grow(16 + len(query) + len(args)*10)
